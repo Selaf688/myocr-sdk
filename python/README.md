@@ -117,32 +117,31 @@ for job in result.wait_all(timeout=1200):
 Pass `webhook_url=` to `create_job()` or `batch()` and myocr POSTs a JSON notification when each job ends:
 
 ```json
-{"event": "job.completed", "data": {"request_id": "...", "status": "done", "model": "bank_statement", "pages_used": 3}}
+{"event": "job.completed", "data": {"request_id": "...", "status": "done", "model": "bank_statement", "pages_used": 3, "result_url": "https://..."}}
+{"event": "job.failed", "data": {"request_id": "...", "status": "failed", "model": "tables", "error": "..."}}
 ```
 
-Events: `job.completed`, `job.failed`. Failed deliveries are retried after 1m, 5m, 30m and 2h.
+`result_url` is a temporary download link (24 hours). Failed deliveries are retried after 1m, 5m, 30m and 2h.
 
-Treat the notification as a signal, not as proof: before acting on it, confirm the job with your own key. The API is the source of truth, so a forged request cannot make you download or trust anything.
+Every delivery is signed: `X-MyOCR-Signature: sha256=<hex>`, an HMAC-SHA256 of the raw body made with your account's **webhook signing secret**. Copy it from the [API dashboard](https://www.myocr.app/account/api#webhook-secret), where you can also replace it. Verify on the raw bytes, before parsing the JSON:
 
 ```python
+import os
 from flask import Flask, request
-from myocr_client import MyOCRClient
+from myocr_client import verify_webhook_signature
 
 app = Flask(__name__)
-client = MyOCRClient()
+SECRET = os.environ["MYOCR_WEBHOOK_SECRET"]   # whsec_... from the dashboard
 
 @app.post("/webhooks/myocr")
 def myocr_webhook():
-    event = request.get_json(silent=True) or {}
-    request_id = (event.get("data") or {}).get("request_id")
-    if request_id:
-        job = client.get_job(request_id)  # authenticated with your key
-        if job.is_done:
-            job.download(f"{request_id}.xlsx")
+    body = request.get_data()                 # raw bytes, NOT request.get_json()
+    if not verify_webhook_signature(body, request.headers.get("X-MyOCR-Signature", ""), SECRET):
+        return "invalid signature", 401
+    event = request.get_json()                # safe now
+    ...
     return "", 204
 ```
-
-Deliveries also carry an `X-MyOCR-Signature: sha256=<hex>` header (HMAC-SHA256 of the raw body). The SDK includes `verify_webhook_signature(body, signature, secret)` to check it against a signing secret.
 
 ## Error handling
 

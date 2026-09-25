@@ -121,31 +121,32 @@ for (const job of done) {
 Pass `webhookUrl` to `createJob()` or `batch()` and myocr POSTs a JSON notification when each job ends:
 
 ```json
-{"event": "job.completed", "data": {"request_id": "...", "status": "done", "model": "bank_statement", "pages_used": 3}}
+{"event": "job.completed", "data": {"request_id": "...", "status": "done", "model": "bank_statement", "pages_used": 3, "result_url": "https://..."}}
+{"event": "job.failed", "data": {"request_id": "...", "status": "failed", "model": "tables", "error": "..."}}
 ```
 
-Events: `job.completed`, `job.failed`. Failed deliveries are retried after 1m, 5m, 30m and 2h.
+`result_url` is a temporary download link (24 hours). Failed deliveries are retried after 1m, 5m, 30m and 2h.
 
-Treat the notification as a signal, not as proof: before acting on it, confirm the job with your own key. The API is the source of truth, so a forged request cannot make you download or trust anything.
+Every delivery is signed: `X-MyOCR-Signature: sha256=<hex>`, an HMAC-SHA256 of the raw body made with your account's **webhook signing secret**. Copy it from the [API dashboard](https://www.myocr.app/account/api#webhook-secret), where you can also replace it. Verify on the raw bytes, before parsing the JSON:
 
 ```typescript
 import express from 'express';
-import { MyOCRClient } from 'myocr-client';
+import { verifyWebhookSignature } from 'myocr-client';
 
 const app = express();
-const client = new MyOCRClient();
+const SECRET = process.env.MYOCR_WEBHOOK_SECRET!; // whsec_... from the dashboard
 
-app.post('/webhooks/myocr', express.json(), async (req, res) => {
-  const requestId = req.body?.data?.request_id;
-  if (requestId) {
-    const job = await client.getJob(requestId); // authenticated with your key
-    if (job.isDone) await job.download(`${requestId}.xlsx`);
+// Capture the raw body: express.json() would re-serialise it and break the signature.
+app.post('/webhooks/myocr', express.raw({ type: 'application/json' }), (req, res) => {
+  const body: Buffer = req.body;
+  if (!verifyWebhookSignature(body, req.header('X-MyOCR-Signature') || '', SECRET)) {
+    return res.status(401).send('invalid signature');
   }
+  const event = JSON.parse(body.toString('utf8')); // safe now
+  // ...
   res.status(204).end();
 });
 ```
-
-Deliveries also carry an `X-MyOCR-Signature: sha256=<hex>` header (HMAC-SHA256 of the raw body). The SDK includes `verifyWebhookSignature(body, signature, secret)` to check it against a signing secret.
 
 ## Error handling
 
