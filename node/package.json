@@ -1,0 +1,59 @@
+{
+  "name": "myocr-client",
+  "version": "0.3.0",
+  "description": "Official Node.js / TypeScript SDK for myocr.app — convert PDFs and images to structured Excel using myocr's OCR engine.",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "import": "./dist/index.js",
+      "types": "./dist/index.d.ts"
+    }
+  },
+  "files": [
+    "dist",
+    "src",
+    "README.md",
+    "CHANGELOG.md",
+    "LICENSE"
+  ],
+  "scripts": {
+    "build": "tsc",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "typecheck": "tsc --noEmit",
+    "clean": "rm -rf dist",
+    "prepublishOnly": "npm run clean && npm run build && npm test"
+  },
+  "keywords": [
+    "ocr",
+    "pdf",
+    "excel",
+    "document-extraction",
+    "document-intelligence",
+    "myocr",
+    "api-client",
+    "typescript",
+    "nodejs"
+  ],
+  "author": "MAD.AI SRL <info@myocr.app>",
+  "license": "MIT",
+  "homepage": "https://github.com/Selaf688/myocr-sdk#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Selaf688/myocr-sdk.git",
+    "directory": "node"
+  },
+  "bugs": {
+    "url": "https://github.com/Selaf688/myocr-sdk/issues"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.0",
+    "typescript": "^5.6.0",
+    "vitest": "^2.1.0"
+  }
+}
