@@ -1,5 +1,10 @@
 # myocr SDKs
 
+[![tests](https://github.com/Selaf688/myocr-sdk/actions/workflows/ci.yml/badge.svg)](https://github.com/Selaf688/myocr-sdk/actions/workflows/ci.yml)
+[![PyPI](https://img.shields.io/pypi/v/myocr-client.svg?label=PyPI)](https://pypi.org/project/myocr-client/)
+[![npm](https://img.shields.io/npm/v/myocr-client.svg?label=npm)](https://www.npmjs.com/package/myocr-client)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+
 Official client libraries for the [myocr.app](https://www.myocr.app) API: turn PDFs, scans and photos of bank statements, invoices, receipts and tables into Excel or JSON.
 
 | | Install | Docs |
